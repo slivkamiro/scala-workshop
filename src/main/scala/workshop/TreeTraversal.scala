@@ -1,7 +1,6 @@
 package workshop
 
 import scala.annotation.tailrec
-import scala.collection.immutable.Queue
 
 object TreeTraversal {
 
@@ -26,18 +25,7 @@ object TreeTraversal {
     case Node(v, l, r) => (postorder(l) ::: postorder(r)) :+ v
   }
 
-  def bfsorder[A](tree: Tree[A]): List[A] = fold(tree)(Nil : List[A])(_ :: _).reverse
-
-  def fold[A, B](tree: Tree[A])(z: B)(f: (A, B) => B): B = {
-    @tailrec
-    def go(q: Queue[Tree[A]], acc: B): B = q.dequeueOption match {
-      case None                        => acc
-      case Some((NilNode, rest))       => go(rest, acc)
-      case Some((Node(v, l, r), rest)) => go(rest.enqueue(l).enqueue(r), f(v, acc))
-    }
-
-    go(Queue(tree), z)
-  }
+  def bfsorder[A](tree: Tree[A])(implicit F: Foldable[Tree]): List[A] = F.fold(tree)(Nil : List[A])(_ :: _).reverse
 
   def dfsorder[A](tree: Tree[A]): List[A] = preorder(tree)
 
