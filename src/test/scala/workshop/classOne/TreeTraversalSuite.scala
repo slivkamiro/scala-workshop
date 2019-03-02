@@ -1,4 +1,4 @@
-package workshop
+package workshop.classOne
 
 import org.scalatest.{FlatSpec, Matchers}
 

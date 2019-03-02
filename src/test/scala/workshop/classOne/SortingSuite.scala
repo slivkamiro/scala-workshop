@@ -1,4 +1,4 @@
-package workshop
+package workshop.classOne
 
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FunSpec, GivenWhenThen, Matchers}

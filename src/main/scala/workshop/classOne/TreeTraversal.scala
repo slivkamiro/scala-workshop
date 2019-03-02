@@ -1,4 +1,4 @@
-package workshop
+package workshop.classOne
 
 import scala.annotation.tailrec
 
