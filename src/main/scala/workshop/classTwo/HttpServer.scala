@@ -27,8 +27,12 @@ object HttpServer extends IOApp {
   val songService: HttpRoutes[IO] = new SongResource(new SongService(songRepository), userRepository).endpoints
   val userService: HttpRoutes[IO] = new UserResource(userRepository).endpoints
 
+  /*val meteredEndpoints: IO[HttpRoutes[IO]] =
+    Prometheus[IO](new CollectorRegistry(), "Ringito")
+      .map(Metrics[IO](_)(songService))*/
+
   override def run(args: List[String]): IO[ExitCode] = {
-    val routes = songService <+> userService
+    val routes = userService <+> songService
 
     BlazeServerBuilder[IO]
       .bindHttp(8111, "0.0.0.0")
@@ -117,7 +121,15 @@ class H2UserRepository(xa: Transactor.Aux[IO, Unit])
     * @param user user to be saved.
     * @return Saved user.
     */
-  override def save(user: User): IO[User] = ???
+  override def save(user: User): IO[User] = saveImpl(user).transact(xa)
+
+  private def saveImpl(user: User): ConnectionIO[User] =
+    for {
+      _     <- sql"insert into users values (${user.login}, ${user.secret})".update.run
+      saved <- sql"select login, secret from users where login = ${user.login}"
+        .query[User]
+        .unique
+    } yield saved
 
   override def findByLoginAndSecret(login: String,
                                     secret: String): IO[Option[User]] =

@@ -2,6 +2,7 @@ package workshop.classTwo
 
 import cats._
 import cats.effect.Sync
+import cats.implicits._
 import io.circe.generic.auto._
 import org.http4s._
 import org.http4s.circe._
@@ -21,10 +22,16 @@ class UserResource[F[_] : Monad : Sync](R: UserRepository[F]) extends Http4sDsl[
     *
     * { "login": "myLogin", "password": "myPassword" }
     *
-    * Returns 201 Created if user was succesfully created and can be used for authentication.
+    * Returns 201 Created if user was successfully created and can be used for authentication.
     * Returns 409 Conflict if user with that login already exists.
     */
   val endpoints: HttpRoutes[F] = HttpRoutes.of[F] {
-    case GET -> Root / "dummy" => NotFound()
+    case request @ PUT -> Root / "register" => for {
+      user  <- request.as[User]
+      found <- R.findByLogin(user.login)
+      resp  <- found.fold {
+        R.save(user).flatMap(_ => Created())
+      } (_ => Conflict())
+    } yield resp
   }
 }

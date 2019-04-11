@@ -24,7 +24,9 @@ class SongResource[F[_]: Monad: Effect](songService: SongService[F], userReposit
     jsonOf[F, SongUpdate]
 
   object ArtistOptParam extends OptionalQueryParamDecoderMatcher[String]("artist")
+  object ArtistParam extends QueryParamDecoderMatcher[String]("artist")
   object TitleOptParam extends OptionalQueryParamDecoderMatcher[String]("title")
+  object TitleParam extends QueryParamDecoderMatcher[String]("title")
 
   val authMiddleware: AuthMiddleware[F, User] =
     BasicAuth[F, User]("Ringito", creds => userRepository.findByLoginAndSecret(creds.username, creds.password))
@@ -66,6 +68,12 @@ class SongResource[F[_]: Monad: Effect](songService: SongService[F], userReposit
         * Properties in request body are optional. If both missing no update will happen and
         * current entity will be returned. Both query parameters should be required here.
         */
+      case authReq @ PUT -> Root / "songs" :? ArtistParam(artist) +& TitleParam(title) as user =>
+        for {
+          update <- authReq.req.as[SongUpdate]
+          song   <- songService.updateSong(user, artist, title, update)
+          resp   <- song.fold(NotFound())(song => Ok(song.asJson))
+        } yield resp
 
     })
 }
